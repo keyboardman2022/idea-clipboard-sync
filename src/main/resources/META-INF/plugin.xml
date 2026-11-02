@@ -1,0 +1,20 @@
+<idea-plugin>
+  <id>dev.clipboard.sync.directory</id>
+  <name>Clipboard Directory Sync</name>
+  <version>0.3.0</version>
+  <vendor>Clipboard Sync</vendor>
+  <description><![CDATA[Sync source-code directories between a host and a remote desktop through a shared text clipboard. Select entire folders in a hierarchical checkbox tree, transfer automatically with acknowledgements and retries, and preview updates before applying. 通过目录树勾选文件夹，支持自动收发、差异预览及直接同步，不生成备份。]]></description>
+  <change-notes><![CDATA[0.3.0: Added hierarchical folder selection with partial-selection indicators in send and receive views. Removed backup creation and restore actions. Automatic clipboard transfer remains compatible with 0.2.0.]]></change-notes>
+  <idea-version since-build="251" until-build="253.*"/>
+  <depends>com.intellij.modules.platform</depends>
+  <actions>
+    <group id="ClipboardDirectorySync.Menu" text="剪贴板同步" popup="true">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <action id="ClipboardDirectorySync.Send" class="dev.clipboard.sync.ide.SendDirectoryAction" text="发送目录…" description="将选定目录通过剪贴板发送"/>
+      <action id="ClipboardDirectorySync.Receive" class="dev.clipboard.sync.ide.ReceiveDirectoryAction" text="接收数据到此目录…" description="接收剪贴板数据，比较并新增或更新文件"/>
+      <separator/>
+      <action id="ClipboardDirectorySync.Settings" class="dev.clipboard.sync.ide.SettingsAction" text="同步设置…"/>
+    </group>
+  </actions>
+</idea-plugin>
