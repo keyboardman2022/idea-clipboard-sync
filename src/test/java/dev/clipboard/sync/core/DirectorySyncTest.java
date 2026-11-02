@@ -40,6 +40,31 @@ class DirectorySyncTest {
         var preview = DirectorySync.preview(target, snap("dir","data","file/child","data","A/x","1","a/y","2","UP","1","up","2"), () -> false);
         assertTrue(preview.changes().stream().allMatch(c -> c.kind() == ChangeKind.BLOCKED), preview.changes().toString());
     }
+    @Test void receiverOnlyShowsAddedModifiedAndBlockedFiles() throws Exception {
+        Path target=root();Files.createDirectories(target.resolve("src"));Files.createDirectories(target.resolve("docs"));
+        Files.writeString(target.resolve("src/same.java"),"same");Files.writeString(target.resolve("src/changed.java"),"old");Files.writeString(target.resolve("docs/only-same.md"),"same");Files.createDirectory(target.resolve("conflict"));
+        var preview=DirectorySync.preview(target,snap("src/same.java","same","src/changed.java","new","docs/only-same.md","same","nested/added.java","new","conflict","new"),()->false);
+        var visible=DirectorySync.changedFiles(preview);
+        assertEquals(List.of("src/changed.java","nested/added.java","conflict"),visible.stream().map(FileEntry::relativePath).toList());
+        var selectable=preview.changes().stream().filter(c->c.kind()==ChangeKind.ADD||c.kind()==ChangeKind.MODIFY).map(Change::relativePath).collect(java.util.stream.Collectors.toSet());
+        var selection=new DirectorySelection(visible,selectable);
+        assertThrows(IllegalArgumentException.class,()->selection.node("docs"));
+        assertThrows(IllegalArgumentException.class,()->selection.node("src/same.java"));
+        assertEquals(Set.of("src/changed.java","nested/added.java"),selection.selectedPaths());assertFalse(selection.node("conflict").selectable());
+        assertEquals(5,preview.snapshot().files().size());assertEquals(5,preview.changes().size());
+    }
+    @Test void identicalReceiverHasNoVisibleFilesOrSelectableChildren() throws Exception {
+        Path target=root();Files.createDirectories(target.resolve("a/sub"));Files.writeString(target.resolve("a/sub/same"),"same");
+        var preview=DirectorySync.preview(target,snap("a/sub/same","same"),()->false);
+        var visible=DirectorySync.changedFiles(preview);assertTrue(visible.isEmpty());
+        var selection=new DirectorySelection(visible);assertTrue(selection.root().children().isEmpty());assertTrue(selection.selectedPaths().isEmpty());
+    }
+    @Test void receiverRefreshShowsFileThatChangedSinceLastComparison() throws Exception {
+        Path target=root();Files.writeString(target.resolve("a"),"same");var snapshot=snap("a","same");
+        assertTrue(DirectorySync.changedFiles(DirectorySync.preview(target,snapshot,()->false)).isEmpty());
+        Files.writeString(target.resolve("a"),"later local change");
+        assertEquals(List.of("a"),DirectorySync.changedFiles(DirectorySync.preview(target,snapshot,()->false)).stream().map(FileEntry::relativePath).toList());
+    }
     @Test void rejectsPathTraversalAndWindowsInvalidNames() throws Exception {
         Path target = root();
         for (String path : List.of("../x", "/x", "C:/x", "a/../../x", "a\\x", "a//b", "a/./b")) assertThrows(IOException.class, () -> PathPolicy.resolve(target, path), path);

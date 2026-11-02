@@ -8,6 +8,12 @@ import static dev.clipboard.sync.core.SyncModel.*;
 
 public final class DirectorySync {
     private DirectorySync() {}
+    /** Receiver display policy; keep the original snapshot and comparisons intact for applying and refreshing. */
+    public static List<FileEntry> changedFiles(Preview preview) {
+        Set<String> visible=new HashSet<>();
+        for(var change:preview.changes())if(change.kind()!=ChangeKind.SAME)visible.add(change.relativePath());
+        return preview.snapshot().files().stream().filter(file->visible.contains(file.relativePath())).toList();
+    }
     public static Preview preview(Path targetRoot, Snapshot snapshot, BooleanSupplier cancelled) throws IOException {
         Path root = targetRoot.toAbsolutePath().normalize(); PathPolicy.checkAncestors(root);
         if (!Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) throw new IOException("目标目录不存在");

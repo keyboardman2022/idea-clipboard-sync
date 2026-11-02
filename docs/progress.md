@@ -47,3 +47,11 @@
 - Headless actual-component smoke test passed keyboard/click/lock/eligibility behavior. Visual inspection exposed blank rows: reused renderer panels had no child layout. Added a failing geometry assertion, laid out children during renderer painting, reran smoke successfully and inspected the resulting preview.
 - Independent whole-change review found no Critical/Important issues. Source compiled against both specified SDKs. Final Plugin Verifier: Compatible on 251 and 253, with no deprecated API usage findings after restore chooser removal.
 - Final ZIP SHA-256 82F0F65FCFDF07AF930DC1943F0834835E0A2B017649386901087FCCF9847B86, 96,638 bytes. Single and 11-part Windows bootstrap smoke tests passed. Build and verification records in verification.md; live full-IDE UI/real RDP not newly exercised.
+
+## 0.3.1 — receiver hides identical files (2026-11-02)
+
+- User explicitly scopes the change to the receiver. Added a tested display filter; sender selection and transport remain unchanged.
+- RED observed missing changedFiles(Preview); GREEN: mixed add/modify/blocked entries retained, identical leaves and empty descendant folders omitted, all-identical preview empty, and later local changes become visible on refresh. Original snapshot/comparison lists remain intact.
+- Final core suite: 53 discovered, 51 successful, 2 environment assumptions aborted, zero failures. Actual FileTree fixture now uses the production filter and asserts hidden identical leaves and directories.
+- All-identical preview disables Apply and reports that received files match (without claiming target-only files are absent). Existing no-backup and automatic transfer behavior retained.
+- Final lowest-SDK build SHA-256 26803B1D606BDE547174D9B68D5EF80ABCE536A669F3BF880D7173A0356582E7, 97,019 bytes. Both specified SDK/API checks passed; final Plugin Verifier reports Compatible for both target versions. Windows installer smoke passed. Existing public GitHub publishing preference retained for patch delivery.

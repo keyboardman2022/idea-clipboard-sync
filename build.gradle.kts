@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.19.0"
 }
 group = "dev.clipboard.sync"
-version = "0.3.0"
+version = "0.3.1"
 repositories {
     mavenCentral()
     intellijPlatform { defaultRepositories() }

@@ -105,7 +105,7 @@ final class ReceiveDialog extends DialogWrapper {
             if(Messages.showYesNoDialog(project,"将新增或更新 "+selected.size()+" 个文件。是否继续？","应用目录同步",null)!=Messages.YES)return;
             Preview planned=preview;
             files.setLocked(true);apply.setEnabled(false);
-            controller.background("应用目录同步", i -> FileApplier.applyGuarded(planned,selected,i::isCanceled,controller::documentsSaved,controller::mutate), result->{controller.refresh(target);controller.result(result);if(isDisposed())return;preview=null;files.clear();apply.setEnabled(false);progress.setText("应用结束。可重新预览以确认当前目录状态。");},()->{if(!isDisposed()){files.setLocked(false);apply.setEnabled(preview!=null);}});
+            controller.background("应用目录同步", i -> FileApplier.applyGuarded(planned,selected,i::isCanceled,controller::documentsSaved,controller::mutate), result->{controller.refresh(target);controller.result(result);if(isDisposed())return;preview=null;files.clear();apply.setEnabled(false);progress.setText("应用结束。可重新预览以确认当前目录状态。");},()->{if(!isDisposed()){files.setLocked(false);apply.setEnabled(preview!=null&&!files.selectedPaths().isEmpty());}});
         });
         return panel;
     }
@@ -117,8 +117,13 @@ final class ReceiveDialog extends DialogWrapper {
         if(isDisposed())return; current=value.progress().id();preview=value.preview();files.clear();
         var state=value.progress(); String missing=java.util.stream.IntStream.rangeClosed(1,state.total()).filter(n->!state.received().contains(n)).limit(30).mapToObj(String::valueOf).collect(java.util.stream.Collectors.joining(", "));
         progress.setText("已收到 "+state.received().size()+" / "+state.total()+" 段"+(state.complete()?"，校验通过。勾选要应用的文件。":"；缺少："+missing));
-        if(preview!=null){Set<String> selectable=new HashSet<>();Map<String,String> descriptions=new HashMap<>();for(var c:preview.changes()){if(c.kind()==ChangeKind.ADD||c.kind()==ChangeKind.MODIFY)selectable.add(c.relativePath());descriptions.put(c.relativePath(),kind(c.kind())+(c.reason().isEmpty()?"":" · "+c.reason()));}files.setFiles(preview.snapshot().files(),selectable,descriptions);}
-        apply.setEnabled(preview!=null); if(((DefaultComboBoxModel<UUID>)sessions.getModel()).getIndexOf(current)<0)sessions.addItem(current); sessions.setSelectedItem(current);
+        if(preview!=null){
+            Set<String> selectable=new HashSet<>();Map<String,String> descriptions=new HashMap<>();
+            for(var c:preview.changes()){if(c.kind()==ChangeKind.SAME)continue;if(c.kind()==ChangeKind.ADD||c.kind()==ChangeKind.MODIFY)selectable.add(c.relativePath());descriptions.put(c.relativePath(),kind(c.kind())+(c.reason().isEmpty()?"":" · "+c.reason()));}
+            var visible=DirectorySync.changedFiles(preview);files.setFiles(visible,selectable,descriptions);
+            if(visible.isEmpty())progress.setText("接收的文件均相同，无需同步。");
+        }
+        apply.setEnabled(preview!=null&&!files.selectedPaths().isEmpty()); if(((DefaultComboBoxModel<UUID>)sessions.getModel()).getIndexOf(current)<0)sessions.addItem(current); sessions.setSelectedItem(current);
     }
     private static String kind(ChangeKind k){return switch(k){case ADD->"新增";case MODIFY->"修改";case SAME->"相同（跳过）";case BLOCKED->"无法应用";};}
     private long beginManualOperation(){autoEpoch++;if(autoLoop!=null)autoLoop.close();autoLoop=null;automatic.setEnabled(true);pause.setEnabled(false);stop.setEnabled(false);return autoEpoch;}
